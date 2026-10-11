@@ -46,6 +46,10 @@ Then:
 4. **Hand over to the edge team.** `terraform output edge_integration` prints the instance, private IP, VPC, security group, port and health check to put in their request (template in special-docker `docs/EDGE_INTEGRATION.md`). Either add their load balancer's security group to `ingress_security_group_ids` (or a CIDR to `ingress_cidrs`), or, if they give you a target group, set `target_group_arns` so the instance registers itself; then `terraform apply`.
 5. When their HTTPS listener is live: set `insecure_http = false` and `public_base_url` to the final URL in tfvars, apply (changes reach the host's `instance.env` only at first boot, so also edit `/opt/special/instance.env` on the host as in the AWS guide section 7, and `sudo special-deploy`). Verify `https://<name>/health` has no `warnings`.
 
+## Metrics
+
+special-docker 1.1.0 can expose Prometheus metrics (`GET /metrics`, off by default). To opt in, create the SSM parameter `<ssm_prefix>/metrics-token` and redeploy. Prometheus scrapes the instance directly on port 80, so add its security group or CIDR to `ingress_security_group_ids` / `ingress_cidrs`; the edge team must not route `/metrics`. Details: special-docker `docs/METRICS.md`.
+
 ## Operations
 
 | Task | How |

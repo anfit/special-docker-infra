@@ -1,0 +1,74 @@
+#!/bin/bash
+set -euxo pipefail
+
+dnf install -y docker
+mkdir -p /etc/docker
+cat > /etc/docker/daemon.json <<'JSON'
+{"log-driver": "local", "log-opts": {"max-size": "10m", "max-file": "3"}}
+JSON
+systemctl enable --now docker
+
+# Compose v2 as a Docker CLI plugin.
+mkdir -p /usr/local/lib/docker/cli-plugins
+curl -fsSL "https://github.com/docker/compose/releases/download/${compose_version}/docker-compose-linux-$(uname -m)" \
+  -o /usr/local/lib/docker/cli-plugins/docker-compose
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+mkdir -p /opt/special
+cat > /opt/special/instance.env <<'ENV'
+SPECIAL_DOMAIN=${domain_name}
+SPECIAL_AWS_REGION=${region}
+SPECIAL_DYNAMODB_TABLE=${table_name}
+SPECIAL_IMAGE_REPO=${image_repository}
+SPECIAL_LOG_GROUP=${log_group_name}
+SPECIAL_SSM_PREFIX=${ssm_prefix}
+ENV
+
+# Registry authentication (mode: ${registry_auth}). special-deploy and the image's deploy.sh both call this.
+%{ if registry_auth == "ecr" ~}
+cat > /opt/special/registry-login.sh <<'SH'
+#!/bin/bash
+set -euo pipefail
+source /opt/special/instance.env
+aws ecr get-login-password --region "$SPECIAL_AWS_REGION" | docker login --username AWS --password-stdin "$(echo "$SPECIAL_IMAGE_REPO" | cut -d/ -f1)" > /dev/null
+SH
+%{ endif ~}
+%{ if registry_auth == "ssm" ~}
+cat > /opt/special/registry-login.sh <<'SH'
+#!/bin/bash
+# Reads a registry user and a read-only token from SSM Parameter Store (created by hand, never in Terraform state).
+set -euo pipefail
+source /opt/special/instance.env
+user=$(aws ssm get-parameter --region "$SPECIAL_AWS_REGION" --name "$SPECIAL_SSM_PREFIX/registry-user" --with-decryption --query Parameter.Value --output text)
+token=$(aws ssm get-parameter --region "$SPECIAL_AWS_REGION" --name "$SPECIAL_SSM_PREFIX/registry-token" --with-decryption --query Parameter.Value --output text)
+printf '%s' "$token" | docker login ${registry_host} --username "$user" --password-stdin > /dev/null
+SH
+%{ endif ~}
+%{ if registry_auth == "none" ~}
+cat > /opt/special/registry-login.sh <<'SH'
+#!/bin/bash
+# Public image: nothing to log in to.
+exit 0
+SH
+%{ endif ~}
+chmod +x /opt/special/registry-login.sh
+
+# The deploy logic ships inside the image; this wrapper only fetches and runs it.
+#   special-deploy v1.2.0         tag
+#   special-deploy sha256:abc...  immutable digest
+cat > /usr/local/bin/special-deploy <<'SH'
+#!/bin/bash
+set -euo pipefail
+source /opt/special/instance.env
+if [ $# -ge 1 ]; then TAG=$1; else TAG=latest; fi
+case "$TAG" in
+  sha256:*) IMAGE=$SPECIAL_IMAGE_REPO@$TAG ;;
+  *)        IMAGE=$SPECIAL_IMAGE_REPO:$TAG ;;
+esac
+/opt/special/registry-login.sh
+docker pull "$IMAGE" > /dev/null
+docker run --rm --entrypoint cat "$IMAGE" /opt/special-deploy/deploy.sh > /opt/special/deploy.sh
+chmod +x /opt/special/deploy.sh
+exec /opt/special/deploy.sh "$TAG"
+SH
+chmod +x /usr/local/bin/special-deploy

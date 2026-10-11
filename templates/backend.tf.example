@@ -1,0 +1,6 @@
+# Copy to backend.tf (git-ignored) to keep state in S3 instead of a local file.
+# Create the bucket once (versioned, encrypted, private); native S3 locking needs Terraform >= 1.10.
+# Then: terraform init -backend-config=backend.hcl
+terraform {
+  backend "s3" {}
+}

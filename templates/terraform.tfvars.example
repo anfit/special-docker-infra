@@ -1,0 +1,20 @@
+# Copy to terraform.tfvars (git-ignored) and fill in. Everything here is specific to YOUR deployment.
+
+# --- account ---------------------------------------------------------------
+aws_region          = "eu-central-1"
+aws_profile         = "special-admin"   # or null when credentials come from the environment / a CI role
+allowed_account_ids = ["111122223333"]  # refuse to run against any other account
+
+# --- what to deploy --------------------------------------------------------
+name        = "special"                 # distinct per environment, e.g. special-dev
+domain_name = "special.example.com"
+
+# Where special-docker releases live (no tag). See docs/REGISTRY_OPTIONS.md.
+image_repository = "ghcr.io/your-org/special-docker"
+registry_auth    = "none"               # none = public image | ssm = private, token in SSM | ecr
+ssm_prefix       = "/special/prod"
+
+# --- sizing / network (defaults are fine for a small team) -----------------
+# instance_type      = "t3.small"
+# create_network     = true             # false => also set vpc_id and subnet_id
+# http_ingress_cidrs = ["0.0.0.0/0"]

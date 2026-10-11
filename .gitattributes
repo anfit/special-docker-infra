@@ -1,0 +1,5 @@
+* text=auto
+*.tf text eol=lf
+*.tftpl text eol=lf
+*.md text eol=lf
+*.example text eol=lf

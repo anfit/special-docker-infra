@@ -1,0 +1,14 @@
+# Copy to tags.auto.tfvars (git-ignored). Your ecosystem's tagging strategy lives here, not in this repo.
+# Every key/value below is a placeholder: replace with your organisation's mandatory tags.
+
+tags = {
+  Application = "special"
+  Environment = "prod"
+  Owner       = "team-or-person@example.com"
+  CostCenter  = "CC-0000"
+  ManagedBy   = "terraform"
+  Repository  = "special-docker-infra"
+}
+
+# Optional policy: fail `terraform plan` when one of these keys is missing from `tags`.
+required_tag_keys = ["Application", "Environment", "Owner", "CostCenter"]

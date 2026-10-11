@@ -1,0 +1,12 @@
+# Terraform working files
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfplan
+
+# Deployment specific, intentionally NOT committed: copy from templates/ and fill in.
+terraform.tfvars
+*.auto.tfvars
+backend.tf
+backend.hcl

@@ -38,14 +38,18 @@ module "host" {
   source = "./modules/host"
 
   name               = var.name
-  domain_name        = var.domain_name
+  public_base_url    = var.public_base_url
+  insecure_http      = var.insecure_http
+  trusted_proxy_hops = var.trusted_proxy_hops
   image_repository   = var.image_repository
   registry_auth      = var.registry_auth
   ssm_prefix         = var.ssm_prefix
   instance_type      = var.instance_type
   root_volume_gb     = var.root_volume_gb
   ami_ssm_parameter  = var.ami_ssm_parameter
-  http_ingress_cidrs = var.http_ingress_cidrs
+  ingress_cidrs      = var.ingress_cidrs
+  ingress_sg_ids     = var.ingress_security_group_ids
+  target_group_arns  = var.target_group_arns
   create_network     = var.create_network
   vpc_id             = var.vpc_id
   subnet_id          = var.subnet_id

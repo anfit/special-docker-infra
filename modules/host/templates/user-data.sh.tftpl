@@ -16,7 +16,9 @@ chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 mkdir -p /opt/special
 cat > /opt/special/instance.env <<'ENV'
-SPECIAL_DOMAIN=${domain_name}
+SPECIAL_PUBLIC_BASE_URL=${public_base_url}
+SPECIAL_INSECURE_HTTP=${insecure_http}
+SPECIAL_TRUSTED_PROXY_HOPS=${trusted_proxy_hops}
 SPECIAL_AWS_REGION=${region}
 SPECIAL_DYNAMODB_TABLE=${table_name}
 SPECIAL_IMAGE_REPO=${image_repository}

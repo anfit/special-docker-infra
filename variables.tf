@@ -51,9 +51,26 @@ variable "log_group_name" {
 
 # ---- the application ----
 
-variable "domain_name" {
+variable "public_base_url" {
   type        = string
-  description = "Public host name; create an A record pointing at the public_ip output. Caddy obtains a certificate for it."
+  description = "The final public URL, e.g. https://special.corp.example (scheme + host, no path). The DNS name, certificate and load balancer are the edge team's; agree the name with them early because OAuth tokens, MCP bindings and share links derive from it."
+
+  validation {
+    condition     = can(regex("^https?://[A-Za-z0-9.-]+(:[0-9]+)?$", var.public_base_url))
+    error_message = "public_base_url must look like https://host (no path, no trailing slash)."
+  }
+}
+
+variable "insecure_http" {
+  type        = bool
+  default     = true
+  description = "Allow plain HTTP and non-secure cookies. True until the edge team's TLS-terminating load balancer is attached (reach the app through an SSM port-forward meanwhile); set false afterwards so the application insists on HTTPS."
+}
+
+variable "trusted_proxy_hops" {
+  type        = number
+  default     = 1
+  description = "Trusted proxies in front of the app that append to X-Forwarded-For (a single ALB = 1)."
 }
 
 variable "image_repository" {
@@ -127,10 +144,22 @@ variable "compose_version" {
   description = "Docker Compose release installed as a CLI plugin."
 }
 
-variable "http_ingress_cidrs" {
+variable "ingress_security_group_ids" {
   type        = list(string)
-  default     = ["0.0.0.0/0"]
-  description = "Who may reach ports 80/443. Narrow it for an internal-only deployment (Let's Encrypt HTTP-01 still needs port 80 open to the internet unless you bring your own certificate)."
+  default     = []
+  description = "Security groups (typically the edge team's load balancer) allowed to reach TCP 80. Default: none, i.e. the host is closed and reachable only through SSM."
+}
+
+variable "ingress_cidrs" {
+  type        = list(string)
+  default     = []
+  description = "CIDR ranges allowed to reach TCP 80 (alternative to ingress_security_group_ids)."
+}
+
+variable "target_group_arns" {
+  type        = list(string)
+  default     = []
+  description = "Target groups created by the edge team that the instance should be registered with (port 80). Leave empty if they register it themselves."
 }
 
 variable "create_network" {

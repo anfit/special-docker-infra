@@ -7,14 +7,21 @@ allowed_account_ids = ["111122223333"]  # refuse to run against any other accoun
 
 # --- what to deploy --------------------------------------------------------
 name        = "special"                 # distinct per environment, e.g. special-dev
-domain_name = "special.example.com"
+
+# The final HTTPS URL, agreed with the team that owns the load balancer / certificate / DNS.
+public_base_url = "https://special.corp.example"
 
 # Where special-docker releases live (no tag). See docs/REGISTRY_OPTIONS.md.
 image_repository = "ghcr.io/your-org/special-docker"
 registry_auth    = "none"               # none = public image | ssm = private, token in SSM | ecr
 ssm_prefix       = "/special/prod"
 
+# --- edge (the load balancer and certificate are NOT ours; see docs/EDGE_INTEGRATION.md) ---
+insecure_http = true                    # until their HTTPS listener is live; then false
+# ingress_security_group_ids = ["sg-0123456789abcdef0"]   # their load balancer's security group
+# target_group_arns          = ["arn:aws:elasticloadbalancing:..."]  # if they hand you a target group
+# trusted_proxy_hops         = 1
+
 # --- sizing / network (defaults are fine for a small team) -----------------
-# instance_type      = "t3.small"
-# create_network     = true             # false => also set vpc_id and subnet_id
-# http_ingress_cidrs = ["0.0.0.0/0"]
+# instance_type  = "t3.small"
+# create_network = true                 # false => also set vpc_id and subnet_id

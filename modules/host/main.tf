@@ -3,14 +3,18 @@
 # `special-deploy` command. No SSH; administration is through SSM Session Manager.
 
 variable "name" { type = string }
-variable "domain_name" { type = string }
+variable "public_base_url" { type = string }
+variable "insecure_http" { type = bool }
+variable "trusted_proxy_hops" { type = number }
 variable "image_repository" { type = string }
 variable "registry_auth" { type = string }
 variable "ssm_prefix" { type = string }
 variable "instance_type" { type = string }
 variable "root_volume_gb" { type = number }
 variable "ami_ssm_parameter" { type = string }
-variable "http_ingress_cidrs" { type = list(string) }
+variable "ingress_cidrs" { type = list(string) }
+variable "ingress_sg_ids" { type = list(string) }
+variable "target_group_arns" { type = list(string) }
 variable "create_network" { type = bool }
 variable "vpc_id" { type = string }
 variable "subnet_id" { type = string }
@@ -89,24 +93,21 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_security_group" "this" {
   name_prefix = "${var.name}-"
-  description = "special-docker web traffic (80 for ACME and redirect, 443 for HTTPS)"
+  description = "special-docker: HTTP from the edge team's load balancer only"
   vpc_id      = local.vpc_id
   tags        = { Name = var.name }
 
-  ingress {
-    description = "HTTP and ACME challenge"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = var.http_ingress_cidrs
-  }
-
-  ingress {
-    description = "HTTPS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = var.http_ingress_cidrs
+  # Closed by default: a rule exists only when a source is given.
+  dynamic "ingress" {
+    for_each = length(var.ingress_cidrs) + length(var.ingress_sg_ids) > 0 ? [1] : []
+    content {
+      description     = "HTTP from the TLS-terminating load balancer"
+      from_port       = 80
+      to_port         = 80
+      protocol        = "tcp"
+      cidr_blocks     = var.ingress_cidrs
+      security_groups = var.ingress_sg_ids
+    }
   }
 
   egress {
@@ -217,15 +218,17 @@ resource "aws_instance" "this" {
   }
 
   user_data = templatefile("${path.module}/templates/user-data.sh.tftpl", {
-    domain_name      = var.domain_name
-    region           = local.region
-    table_name       = var.table_name
-    image_repository = var.image_repository
-    log_group_name   = var.log_group_name
-    ssm_prefix       = var.ssm_prefix
-    registry_auth    = var.registry_auth
-    registry_host    = local.registry_host
-    compose_version  = var.compose_version
+    public_base_url    = var.public_base_url
+    insecure_http      = var.insecure_http ? "1" : "0"
+    trusted_proxy_hops = var.trusted_proxy_hops
+    region             = local.region
+    table_name         = var.table_name
+    image_repository   = var.image_repository
+    log_group_name     = var.log_group_name
+    ssm_prefix         = var.ssm_prefix
+    registry_auth      = var.registry_auth
+    registry_host      = local.registry_host
+    compose_version    = var.compose_version
   })
 
   tags = { Name = var.name }
@@ -239,16 +242,26 @@ resource "aws_instance" "this" {
   depends_on = [aws_route_table_association.public]
 }
 
-resource "aws_eip" "this" {
-  domain   = "vpc"
-  instance = aws_instance.this.id
-  tags     = { Name = var.name }
+# Optional: register with target groups the edge team created.
+resource "aws_lb_target_group_attachment" "edge" {
+  for_each         = toset(var.target_group_arns)
+  target_group_arn = each.value
+  target_id        = aws_instance.this.id
+  port             = 80
 }
 
-output "public_ip" {
-  value = aws_eip.this.public_ip
+output "private_ip" {
+  value = aws_instance.this.private_ip
 }
 
 output "instance_id" {
   value = aws_instance.this.id
+}
+
+output "security_group_id" {
+  value = aws_security_group.this.id
+}
+
+output "vpc_id" {
+  value = local.vpc_id
 }

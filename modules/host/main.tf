@@ -41,8 +41,8 @@ locals {
   subnet_id = var.create_network ? aws_subnet.public[0].id : var.subnet_id
 
   # "ghcr.io/org/img" -> "ghcr.io"; Docker Hub style "org/img" -> "" (docker login's default server).
-  first_segment  = split("/", var.image_repository)[0]
-  registry_host  = can(regex("[.:]", local.first_segment)) || local.first_segment == "localhost" ? local.first_segment : ""
+  first_segment = split("/", var.image_repository)[0]
+  registry_host = can(regex("[.:]", local.first_segment)) || local.first_segment == "localhost" ? local.first_segment : ""
 }
 
 # ------------------------------------------------------------------ network (optional)

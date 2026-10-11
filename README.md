@@ -2,10 +2,10 @@
 
 Terraform that provisions the AWS side of [special-docker](../special-docker): the DynamoDB table, the log group, and an EC2 docker host with a least-privilege role. It deliberately does **not** decide:
 
-* **where releases come from** (`image_repository` + `registry_auth`; see [`docs/REGISTRY_OPTIONS.md`](docs/REGISTRY_OPTIONS.md) for the free, no-private-server options and a release-strategy menu), or
+* **where releases come from** beyond the default of a public GHCR image (`image_repository` + `registry_auth`; see [`docs/REGISTRY_OPTIONS.md`](docs/REGISTRY_OPTIONS.md) for the free, no-private-server options and a release-strategy menu), or
 * **anything specific to your AWS ecosystem** (account, profile, tags, state backend). Those live in git-ignored files you create from `templates/`.
 
-> **Status:** written without Terraform available, so it has **not** been through `terraform validate` or `plan`. Run `terraform init && terraform validate` first and expect to fix small things. (`special-docker/deploy/aws/special-stack.yaml` is an equivalent, CloudFormation-based path that stays as a single-file alternative.)
+> **Status:** `terraform init`, `validate` and `fmt` pass (Terraform 1.16.5, AWS provider 5.x), and the first-boot script renders and passes `bash -n` for all three `registry_auth` modes. It has **not** been planned or applied against a real AWS account. (`special-docker/deploy/aws/special-stack.yaml` is an equivalent, CloudFormation-based path that stays as a single-file alternative.)
 
 ## What it creates
 

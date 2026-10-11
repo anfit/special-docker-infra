@@ -37,23 +37,23 @@ module "data" {
 module "host" {
   source = "./modules/host"
 
-  name                = var.name
-  domain_name         = var.domain_name
-  image_repository    = var.image_repository
-  registry_auth       = var.registry_auth
-  ssm_prefix          = var.ssm_prefix
-  instance_type       = var.instance_type
-  root_volume_gb      = var.root_volume_gb
-  ami_ssm_parameter   = var.ami_ssm_parameter
-  http_ingress_cidrs  = var.http_ingress_cidrs
-  create_network      = var.create_network
-  vpc_id              = var.vpc_id
-  subnet_id           = var.subnet_id
-  vpc_cidr            = var.vpc_cidr
-  subnet_cidr         = var.subnet_cidr
-  table_name          = module.data.table_name
-  table_arn           = module.data.table_arn
-  log_group_name      = module.data.log_group_name
-  log_group_arn       = module.data.log_group_arn
-  compose_version     = var.compose_version
+  name               = var.name
+  domain_name        = var.domain_name
+  image_repository   = var.image_repository
+  registry_auth      = var.registry_auth
+  ssm_prefix         = var.ssm_prefix
+  instance_type      = var.instance_type
+  root_volume_gb     = var.root_volume_gb
+  ami_ssm_parameter  = var.ami_ssm_parameter
+  http_ingress_cidrs = var.http_ingress_cidrs
+  create_network     = var.create_network
+  vpc_id             = var.vpc_id
+  subnet_id          = var.subnet_id
+  vpc_cidr           = var.vpc_cidr
+  subnet_cidr        = var.subnet_cidr
+  table_name         = module.data.table_name
+  table_arn          = module.data.table_arn
+  log_group_name     = module.data.log_group_name
+  log_group_arn      = module.data.log_group_arn
+  compose_version    = var.compose_version
 }

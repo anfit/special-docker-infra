@@ -1,5 +1,7 @@
 # Getting a release onto the host without running a private Docker server
 
+> **Decision (taken): option 1, GHCR public.** The application is small and has no secrets in the image, so `ghcr.io/<owner>/special-docker` is published as a public package by the workflow in special-docker (`.github/workflows/release.yml`) and the host pulls it anonymously (`registry_auth = "none"`, the default). The rest of this page is kept as the record of alternatives.
+
 **Constraints:** free (or pennies), nothing to operate, no release strategy decided yet, and `special-docker` will live on GitHub.
 
 The host only needs one thing from a release: *an image it can start*. Everything below is a different way to carry that image from "built" to "on the EC2 host". This repo's `image_repository` / `registry_auth` variables cover options 1–4 today; options 5–7 need a small, specific change to the host's `special-deploy` wrapper (noted per option).
